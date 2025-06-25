@@ -1,29 +1,63 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// Animation helpers
-const fadeIn = {
-  animation: 'fadeIn 0.7s',
+// Enhanced Animation helpers with more sophisticated effects
+const animations = {
+  fadeIn: {
+    animation: 'fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  slideUp: {
+    animation: 'slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  scaleIn: {
+    animation: 'scaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  glow: {
+    boxShadow: '0 0 20px rgba(100, 181, 246, 0.4), 0 8px 32px rgba(52, 152, 219, 0.2)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  pulse: {
+    animation: 'pulse 2s infinite',
+  }
 };
-const slideUp = {
-  animation: 'slideUp 0.5s',
-};
-const glow = {
-  boxShadow: '0 0 8px #64b5f6, 0 2px 8px rgba(52,152,219,.15)',
-  transition: 'box-shadow 0.3s',
-};
+
 const keyframes = `
 @keyframes fadeIn {
-  from { opacity: 0;}
-  to { opacity: 1;}
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(24px);}
-  to { opacity: 1; transform: translateY(0);}
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 @keyframes pop {
-  0% {transform:scale(.97);}
-  50% {transform:scale(1.04);}
-  100% {transform:scale(1);}
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  75% { transform: rotate(-5deg); }
 }
 `;
 
@@ -51,17 +85,19 @@ const CobolNotebook = () => {
   const [isConnected, setIsConnected] = useState(false);
   const fileInputRef = useRef(null);
   const [cellAnimation, setCellAnimation] = useState(null);
+  const [theme, setTheme] = useState('light');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Animation trigger for cell addition
   useEffect(() => {
     if (cellAnimation !== null) {
-      setTimeout(() => setCellAnimation(null), 700);
+      setTimeout(() => setCellAnimation(null), 800);
     }
   }, [cells, cellAnimation]);
 
-  // Mock COBOL compiler/interpreter (see your original code)
+  // Mock COBOL compiler/interpreter
   const compileAndRun = async (code) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     const lines = code.split('\n');
     let output = '';
     const hasIdentification = lines.some(line => line.includes('IDENTIFICATION DIVISION'));
@@ -170,10 +206,12 @@ const CobolNotebook = () => {
   };
 
   const runAllCells = async () => {
+    setIsLoading(true);
     for (const cell of cells.filter(c => c.type === 'code')) {
       await runCell(cell.id);
       await new Promise(resolve => setTimeout(resolve, 400));
     }
+    setIsLoading(false);
   };
 
   const saveNotebook = () => {
@@ -217,186 +255,233 @@ const CobolNotebook = () => {
 
   const renderMarkdown = (content) => {
     return content
-      .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/^# (.*$)/gm, '<h1 style="color: #2c3e50; margin-bottom: 16px; font-size: 28px;">$1</h1>')
+      .replace(/^## (.*$)/gm, '<h2 style="color: #34495e; margin-bottom: 12px; font-size: 22px;">$1</h2>')
+      .replace(/^### (.*$)/gm, '<h3 style="color: #5d6d7e; margin-bottom: 10px; font-size: 18px;">$1</h3>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2980b9;">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em style="color: #8e44ad;">$1</em>')
+      .replace(/`(.*?)`/g, '<code style="background: #f8f9fa; padding: 2px 6px; border-radius: 4px; color: #e74c3c; font-family: monospace;">$1</code>')
       .replace(/\n/g, '<br>');
   };
 
-  // --- UI Styling ---
   const styles = {
     container: {
-      fontFamily: 'Inter, Arial, sans-serif',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
+      background: theme === 'light' 
+        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        : 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
       minHeight: '100vh',
-      padding: '0',
-      transition: 'background .5s',
+      transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    backgroundPattern: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
+      animation: 'float 6s ease-in-out infinite',
+      zIndex: 0,
     },
     header: {
-      background: 'linear-gradient(90deg,#283e51 0%,#485563 100%)',
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
       color: 'white',
-      padding: '18px 0 18px 0',
+      padding: '20px 0',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      boxShadow: '0 2px 12px rgba(44,62,80,0.12)',
       position: 'sticky',
       top: 0,
-      zIndex: 10
+      zIndex: 100,
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      ...animations.fadeIn,
     },
     title: {
-      margin: '0 32px',
-      fontSize: '2.1rem',
-      fontWeight: 700,
-      letterSpacing: '1.2px',
+      margin: '0 40px',
+      fontSize: '2.5rem',
+      fontWeight: 800,
+      letterSpacing: '2px',
       display: 'flex',
       alignItems: 'center',
-      gap: '10px'
+      gap: '15px',
+      textShadow: '0 2px 20px rgba(0,0,0,0.3)',
     },
     logo: {
-      width: 35,
-      height: 35,
+      width: 45,
+      height: 45,
       borderRadius: '50%',
-      background: 'linear-gradient(135deg, #4fc3f7 20%, #1976d2 100%)',
-      display: 'inline-block',
-      marginRight: '12px',
-      boxShadow: '0 4px 12px #1976d260'
+      background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '20px',
+      boxShadow: '0 8px 32px rgba(255, 107, 107, 0.4)',
+      animation: 'wave 3s ease-in-out infinite',
     },
     toolbar: {
       display: 'flex',
-      gap: '12px',
+      gap: '15px',
       alignItems: 'center',
-      marginRight: '36px'
+      marginRight: '40px'
     },
     button: {
-      padding: '10px 22px',
+      padding: '12px 24px',
       border: 'none',
-      borderRadius: '22px',
+      borderRadius: '50px',
       cursor: 'pointer',
-      fontSize: '15px',
+      fontSize: '14px',
       fontWeight: 600,
-      letterSpacing: '.04em',
-      transition: 'background 0.2s, transform 0.13s',
+      letterSpacing: '0.5px',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       outline: 'none',
-      boxShadow: '0 2px 8px #0001'
+      position: 'relative',
+      overflow: 'hidden',
+      textTransform: 'uppercase',
     },
     primaryButton: {
-      background: 'linear-gradient(90deg,#6dd5ed 0,#2193b0 100%)',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: 'white',
+      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
     },
     successButton: {
-      background: 'linear-gradient(90deg,#56ab2f,#a8e063)',
+      background: 'linear-gradient(135deg, #56ab2f 0%, #a8e063 100%)',
       color: 'white',
+      boxShadow: '0 4px 15px rgba(86, 171, 47, 0.4)',
     },
     dangerButton: {
-      background: 'linear-gradient(90deg,#ff5858,#f09819)',
+      background: 'linear-gradient(135deg, #ff512f 0%, #f09819 100%)',
       color: 'white',
+      boxShadow: '0 4px 15px rgba(255, 81, 47, 0.4)',
     },
     secondaryButton: {
-      background: 'linear-gradient(90deg,#d3cce3,#e9e4f0)',
-      color: '#34495e'
+      background: 'rgba(255, 255, 255, 0.2)',
+      backdropFilter: 'blur(10px)',
+      color: 'white',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 4px 15px rgba(255, 255, 255, 0.1)',
     },
     main: {
-      maxWidth: '900px',
+      maxWidth: '1000px',
       margin: '0 auto',
-      padding: '36px 10px 110px 10px'
+      padding: '40px 20px 120px 20px',
+      position: 'relative',
+      zIndex: 1,
     },
     cell: {
-      background: 'linear-gradient(135deg,#fff 65%,#e3f5ff 100%)',
-      border: '1.5px solid #e0e5ec',
-      borderRadius: '18px',
-      marginBottom: '40px',
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '24px',
+      marginBottom: '30px',
       overflow: 'hidden',
-      boxShadow: '0 6px 24px 0 rgba(52, 152, 219, 0.06),0 1.5px 4px #1976d230',
+      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1)',
       position: 'relative',
-      ...slideUp,
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      ...animations.slideUp,
+    },
+    cellHover: {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.1)',
     },
     cellHeader: {
-      background: 'linear-gradient(90deg,#f8fafc 50%,#e3f5ff 100%)',
-      padding: '13px 23px',
-      borderBottom: '1px solid #f0f0f8',
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(248,250,252,0.9) 100%)',
+      backdropFilter: 'blur(10px)',
+      padding: '20px 30px',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center'
     },
     cellType: {
-      fontSize: '13px',
+      fontSize: '14px',
       fontWeight: 700,
-      color: '#1976d2',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
       textTransform: 'uppercase',
-      letterSpacing: '.05em'
+      letterSpacing: '1px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
     },
     cellActions: {
       display: 'flex',
-      gap: '7px'
+      gap: '10px'
     },
     smallButton: {
-      padding: '4.5px 13px',
-      fontSize: '12.5px',
+      padding: '8px 16px',
+      fontSize: '12px',
       border: 'none',
-      borderRadius: '12px',
+      borderRadius: '20px',
       cursor: 'pointer',
       fontWeight: 600,
-      transition: 'background 0.17s, box-shadow .18s',
+      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
       outline: 'none',
-      boxShadow: '0 1.2px 6px #1976d230'
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
     },
     codeEditor: {
       width: '100%',
-      minHeight: '145px',
-      padding: '19px',
+      minHeight: '200px',
+      padding: '30px',
       border: 'none',
       fontSize: '15px',
-      fontFamily: 'Fira Mono, Monaco, Consolas, "Courier New", monospace',
-      background: 'linear-gradient(90deg,#f8fafc 60%,#e3f5ff 100%)',
+      fontFamily: '"Fira Code", "JetBrains Mono", "Cascadia Code", monospace',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e3f5ff 100%)',
       resize: 'vertical',
       outline: 'none',
-      borderRadius: '0 0 0 0',
-      color: '#23395d',
-      transition: 'background 0.15s',
-      ...fadeIn
+      color: '#2d3748',
+      lineHeight: '1.6',
+      transition: 'all 0.3s ease',
+      ...animations.fadeIn
     },
     markdownEditor: {
       width: '100%',
-      minHeight: '88px',
-      padding: '17px',
+      minHeight: '120px',
+      padding: '25px',
       border: 'none',
-      fontSize: '15px',
-      fontFamily: 'Inter, Arial, sans-serif',
+      fontSize: '16px',
+      fontFamily: '"Inter", system-ui, sans-serif',
       resize: 'vertical',
       outline: 'none',
-      background: '#f8fafc',
-      color: '#34495e',
-      ...fadeIn
+      background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+      color: '#2d3748',
+      lineHeight: '1.7',
+      ...animations.fadeIn
     },
     output: {
-      background: 'linear-gradient(90deg,#0f2027 0%, #203a43 100%)',
-      color: '#f9f9f9',
-      padding: '18px 22px 12px 22px',
-      fontFamily: 'Fira Mono, Monaco, Consolas, "Courier New", monospace',
+      background: 'linear-gradient(135deg, #1a202c 0%, #2d3748 100%)',
+      color: '#e2e8f0',
+      padding: '25px 30px',
+      fontFamily: '"Fira Code", monospace',
       fontSize: '14px',
       whiteSpace: 'pre-wrap',
-      borderTop: '1px solid #e0e5ec',
-      minHeight: '39px',
-      borderBottomLeftRadius: '18px',
-      borderBottomRightRadius: '18px',
-      ...fadeIn
+      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+      minHeight: '60px',
+      position: 'relative',
+      ...animations.fadeIn
     },
     markdownPreview: {
-      padding: '19px',
-      fontSize: '15.5px',
-      lineHeight: '1.7',
-      color: '#23395d',
-      background: 'none',
-      ...fadeIn
+      padding: '30px',
+      fontSize: '16px',
+      lineHeight: '1.8',
+      color: '#2d3748',
+      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      ...animations.fadeIn
     },
     statusBar: {
-      background: 'linear-gradient(90deg,#283e51 0%,#485563 100%)',
+      background: 'rgba(26, 32, 44, 0.95)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       color: 'white',
-      padding: '15px 32px',
+      padding: '20px 40px',
       position: 'fixed',
       bottom: 0,
       left: 0,
@@ -405,69 +490,133 @@ const CobolNotebook = () => {
       justifyContent: 'space-between',
       alignItems: 'center',
       fontSize: '14px',
-      letterSpacing: '.02em',
-      boxShadow: '0 -2px 16px #283e5110',
-      zIndex: 50
+      letterSpacing: '0.5px',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderBottom: 'none',
+      zIndex: 100
     },
     hiddenInput: { display: 'none' },
     runningIndicator: {
-      color: '#ffeb3b',
-      fontSize: '13px',
+      color: '#ffd700',
+      fontSize: '14px',
       fontWeight: 'bold',
-      marginBottom: '6px',
-      letterSpacing: '.04em',
-      animation: 'fadeIn 0.8s'
+      marginBottom: '10px',
+      letterSpacing: '0.5px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      ...animations.pulse
+    },
+    loadingSpinner: {
+      width: '16px',
+      height: '16px',
+      border: '2px solid rgba(255, 215, 0, 0.3)',
+      borderTop: '2px solid #ffd700',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
     },
     cellGlow: {
-      boxShadow: '0 0 0 4px #2196f340,0 0 16px #2196f360',
-      animation: 'pop 0.35s'
+      boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.3), 0 25px 50px rgba(102, 126, 234, 0.2)',
+      animation: 'pop 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      transform: 'scale(1.02)',
     },
-    cellFade: {
-      animation: 'fadeIn 0.7s'
+    shimmerButton: {
+      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+      backgroundSize: '200px 100%',
+      animation: 'shimmer 2s infinite',
     }
   };
 
-  // --- Render ---
+  const ButtonHover = ({ children, style, ...props }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
+    return (
+      <button
+        {...props}
+        style={{
+          ...style,
+          transform: isHovered ? 'translateY(-2px) scale(1.05)' : 'translateY(0) scale(1)',
+          boxShadow: isHovered 
+            ? `${style.boxShadow}, 0 8px 25px rgba(0,0,0,0.15)` 
+            : style.boxShadow,
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const CellContainer = ({ children, cell }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
+    return (
+      <div
+        style={{
+          ...styles.cell,
+          ...(cellAnimation === cell.id ? styles.cellGlow : {}),
+          ...(isHovered ? styles.cellHover : {}),
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {children}
+      </div>
+    );
+  };
+
   return (
     <div style={styles.container}>
-      {/* Animation Keyframes */}
+      <div style={styles.backgroundPattern}></div>
       <style>{keyframes}</style>
+      
       <header style={styles.header}>
         <span style={styles.title}>
-          <span style={styles.logo}></span>
+          <div style={styles.logo}>
+            💻
+          </div>
           COBOL Notebook
         </span>
         <div style={styles.toolbar}>
-          <button 
+          <ButtonHover 
             style={{...styles.button, ...styles.successButton}}
             onClick={runAllCells}
+            disabled={isLoading}
           >
-            <span role="img" aria-label="run all">⚡</span> Run All
-          </button>
-          <button 
+            {isLoading ? (
+              <>
+                <div style={styles.loadingSpinner}></div>
+                Running...
+              </>
+            ) : (
+              <>⚡ Run All</>
+            )}
+          </ButtonHover>
+          <ButtonHover 
             style={{...styles.button, ...styles.primaryButton}}
             onClick={() => addCell('code')}
           >
             + Code
-          </button>
-          <button 
+          </ButtonHover>
+          <ButtonHover 
             style={{...styles.button, ...styles.primaryButton}}
             onClick={() => addCell('markdown')}
           >
             + Text
-          </button>
-          <button 
+          </ButtonHover>
+          <ButtonHover 
             style={{...styles.button, ...styles.secondaryButton}}
             onClick={saveNotebook}
           >
-            <span role="img" aria-label="save">💾</span> Save
-          </button>
-          <button 
+            💾 Save
+          </ButtonHover>
+          <ButtonHover 
             style={{...styles.button, ...styles.secondaryButton}}
             onClick={() => fileInputRef.current.click()}
           >
-            <span role="img" aria-label="load">📂</span> Load
-          </button>
+            📂 Load
+          </ButtonHover>
         </div>
       </header>
 
@@ -481,66 +630,59 @@ const CobolNotebook = () => {
 
       <main style={styles.main}>
         {cells.map((cell, index) => (
-          <div
-            key={cell.id}
-            style={{
-              ...styles.cell,
-              ...(cellAnimation === cell.id ? styles.cellGlow : {}),
-            }}
-          >
+          <CellContainer key={cell.id} cell={cell}>
             <div style={styles.cellHeader}>
               <span style={styles.cellType}>
                 {cell.type === 'code' ? (
                   <>
-                    <span role="img" aria-label="cobol" style={{marginRight: 4}}>💻</span>
+                    <span style={{fontSize: '16px'}}>⚙️</span>
                     COBOL Code
                   </>
                 ) : (
                   <>
-                    <span role="img" aria-label="doc" style={{marginRight: 4}}>📝</span>
+                    <span style={{fontSize: '16px'}}>📝</span>
                     Markdown Text
                   </>
                 )}
               </span>
               <div style={styles.cellActions}>
                 {cell.type === 'code' && (
-                  <button
+                  <ButtonHover
                     style={{...styles.smallButton, ...styles.successButton}}
                     onClick={() => runCell(cell.id)}
                     disabled={cell.isRunning}
                   >
                     {cell.isRunning ? (
-                      <span>
-                        <span className="cell-dot" style={{color:'#ffeb3b'}}>●</span> Running...
-                      </span>
+                      <>
+                        <div style={styles.loadingSpinner}></div>
+                        Running
+                      </>
                     ) : (
-                      <span>
-                        <span style={{marginRight:2}} role="img" aria-label="run">▶️</span> Run
-                      </span>
+                      <>▶️ Run</>
                     )}
-                  </button>
+                  </ButtonHover>
                 )}
-                <button
+                <ButtonHover
                   style={{...styles.smallButton, ...styles.primaryButton}}
                   onClick={() => addCell('code', index)}
                   title="Add Code Cell Below"
                 >
                   + Code
-                </button>
-                <button
+                </ButtonHover>
+                <ButtonHover
                   style={{...styles.smallButton, ...styles.primaryButton}}
                   onClick={() => addCell('markdown', index)}
                   title="Add Markdown Cell Below"
                 >
                   + Text
-                </button>
-                <button
+                </ButtonHover>
+                <ButtonHover
                   style={{...styles.smallButton, ...styles.dangerButton}}
                   onClick={() => deleteCell(cell.id)}
                   title="Delete Cell"
                 >
-                  <span role="img" aria-label="delete">🗑️</span>
-                </button>
+                  🗑️
+                </ButtonHover>
               </div>
             </div>
             
@@ -556,7 +698,12 @@ const CobolNotebook = () => {
                 />
                 {(cell.output || cell.isRunning) && (
                   <div style={styles.output}>
-                    {cell.isRunning && <div style={styles.runningIndicator}>● Running...</div>}
+                    {cell.isRunning && (
+                      <div style={styles.runningIndicator}>
+                        <div style={styles.loadingSpinner}></div>
+                        Compiling and executing...
+                      </div>
+                    )}
                     {cell.output}
                   </div>
                 )}
@@ -568,6 +715,7 @@ const CobolNotebook = () => {
                   value={cell.content}
                   onChange={(e) => updateCell(cell.id, e.target.value)}
                   placeholder="Write markdown text here..."
+                  autoFocus={cellAnimation === cell.id}
                 />
                 <div 
                   style={styles.markdownPreview}
@@ -577,22 +725,26 @@ const CobolNotebook = () => {
                 />
               </>
             )}
-          </div>
+          </CellContainer>
         ))}
       </main>
 
       <div style={styles.statusBar}>
-        <div>
-          <span role="img" aria-label="logo" style={{fontSize:'17px', verticalAlign:'middle'}}>💾</span>
-          &nbsp;COBOL Notebook v1.0 &nbsp; | &nbsp;
-          <span role="img" aria-label="box" style={{fontSize:'14px', verticalAlign:'middle'}}>📦</span>
-          &nbsp;{cells.length} cells &nbsp; | &nbsp; 
-          <span role="img" aria-label="bolt" style={{fontSize:'14px',verticalAlign:'middle'}}>⚡</span>
-          &nbsp;Ready
+        <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+          <span style={{fontSize: '18px'}}>💾</span>
+          <strong>COBOL Notebook v2.0</strong>
+          <span style={{opacity: 0.7}}>|</span>
+          <span>📦 {cells.length} cells</span>
+          <span style={{opacity: 0.7}}>|</span>
+          <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            ⚡ <strong style={{color: '#4ade80'}}>Ready</strong>
+          </span>
         </div>
-        <div>
-          <span role="img" aria-label="link" style={{fontSize:'14px', verticalAlign:'middle'}}>🔗</span>
-          &nbsp;Status: <span style={{fontWeight:600}}>{isConnected ? 'Connected' : 'Local Mode'}</span>
+        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+          <span style={{fontSize: '14px'}}>🔗</span>
+          Status: <strong style={{color: isConnected ? '#4ade80' : '#fbbf24'}}>
+            {isConnected ? 'Connected' : 'Local Mode'}
+          </strong>
         </div>
       </div>
     </div>
